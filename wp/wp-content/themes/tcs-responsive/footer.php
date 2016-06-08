@@ -239,6 +239,14 @@ _kms('//doug1izaerwt3.cloudfront.net/' + _kmk + '.1.js');
 <script>
 (function() {
   var headerApp = angular.module('tc.header', [])
+  headerApp.config(function($sceDelegateProvider) {
+    $sceDelegateProvider.resourceUrlWhitelist([
+      // Allow same origin resource loads.
+      'self',
+      // Allow loading from our assets domain.  Notice the difference between * and **.
+      'http://*.topcoder.com/**'
+    ]);
+  });
   headerApp.directive('ngHeaderBootstrap', function(){
     return {
       restrict: 'C',
