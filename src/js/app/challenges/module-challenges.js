@@ -3,7 +3,7 @@
     
   'use strict';
   var challengesModule = angular.module('tc.challenges', ['ngRoute', 'ngCookies']);
-  challengesModule.config(['$httpProvider', '$routeProvider', '$locationProvider',
+  challengesModule.config(['$httpProvider', '$routeProvider', '$locationProvider', '$sceDelegateProvider',
   function ($httpProvider, $routeProvider, $locationProvider, $sceDelegateProvider) {  
     $sceDelegateProvider.resourceUrlWhitelist([
       // Allow same origin resource loads.
