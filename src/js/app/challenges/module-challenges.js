@@ -4,7 +4,14 @@
   'use strict';
   var challengesModule = angular.module('tc.challenges', ['ngRoute', 'ngCookies']);
   challengesModule.config(['$httpProvider', '$routeProvider', '$locationProvider',
-  function ($httpProvider, $routeProvider, $locationProvider) {
+  function ($httpProvider, $routeProvider, $locationProvider, $sceDelegateProvider) {  
+    $sceDelegateProvider.resourceUrlWhitelist([
+      // Allow same origin resource loads.
+      'self',
+      // Allow loading from subdomains.  Notice the difference between * and **.
+      'http://*.topcoder.com/**',
+      'https://*.topcoder.com/**'
+    ]);
 
     $locationProvider.html5Mode(true).hashPrefix('!');
 

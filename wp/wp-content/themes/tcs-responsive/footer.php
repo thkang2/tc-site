@@ -243,8 +243,9 @@ _kms('//doug1izaerwt3.cloudfront.net/' + _kmk + '.1.js');
     $sceDelegateProvider.resourceUrlWhitelist([
       // Allow same origin resource loads.
       'self',
-      // Allow loading from our assets domain.  Notice the difference between * and **.
-      'http://*.topcoder.com/**'
+      // Allow loading from subdomains.  Notice the difference between * and **.
+      'http://*.topcoder.com/**',
+      'https://*.topcoder.com/**'
     ]);
   });
   headerApp.directive('ngHeaderBootstrap', function(){
