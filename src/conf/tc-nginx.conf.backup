@@ -1,0 +1,129 @@
+#include this file in your http block
+map_hash_bucket_size 128;
+
+upstream rss {
+    server tc1-rss-service.herokuapp.com:443;
+    ## server localhost:3333;
+}
+
+upstream www {
+    server www.topcoder.com:443;
+}
+
+map $http_origin $cors_header {
+    default "";
+    "~(local|members\.local)\.(topcoder|topcoder-dev|topcoder-qa)\.com$" "$http_origin";
+}
+
+server {
+    listen  80;
+    server_name  members.local.topcoder.com local.topcoder.com members.local.topcoder-dev.com local.topcoder-dev.com members.local.topcoder-qa.com local.topcoder-qa.com;
+    charset UTF-8;
+
+    set $app_base /home/vagrant;            ## CHANGE ME root apps folder reference 
+    set $root_base $app_base/tc-site;
+    set $app_review_base $app_base/ap-app-review;            
+    root $root_base/wp;
+    
+    add_header 'Access-Control-Allow-Origin' "$cors_header";
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, PATCH, DELETE';
+
+    client_max_body_size 20M;
+
+    location  = / {
+        proxy_pass https://wwwtc.wpengine.com/;
+        proxy_set_header Host wwwtc.wpengine.com;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'X-nginx-debug' 'proxy-pass';
+    }
+
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location / {
+        index index.php;
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location ~ \.php$ {
+        #NOTE: You should have "cgi.fix_pathinfo = 0;" in php.ini
+        include fastcgi.conf;
+        fastcgi_intercept_errors on;
+        fastcgi_pass localhost:9000;
+    }
+
+    location ~ ^/challenge-details/\d+/$ {
+        index /challenge-details/index.html;               
+    }
+
+    location ~ ^/challenge-details/register(.*) {
+        return 302 $scheme://$host/challenge-details$1?$query_string;
+    }
+
+    location = /challenge-details/index.html {
+        root $root_base/dist/html;
+    }
+
+    location /my-dashboard {
+        try_files $uri /my-dashboard/index.html;
+        root $root_base/dist/html;       
+    }
+
+    location /reviews {
+        alias $app_review_base/.tmp;
+    }
+
+    location /reviews/bower_components {
+        alias $app_review_base/bower_components;
+    }
+
+    location ~ ^/js/ {
+        root $root_base/dist;
+    }
+
+    location ~ ^/css/ {
+        root $root_base/dist;
+    }
+
+    location ~ ^/fonts/ {
+        add_header 'Access-Control-Allow-Origin' "$http_origin";
+        add_header 'Access-Control-Allow-Headers' "Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since";
+        root $root_base/dist;
+    }
+
+    location ~ ^/i/ {
+        root $root_base/wp/wp-content/themes/tcs-responsive;
+    }
+
+    # the php code throws a dist folder onto the cdn if its provided, so if this server is being used as the php cdn, map the path
+    location ~ ^/mf/dist/ {
+        rewrite ^/mf/dist/(.*) /mf/$1;
+    }
+
+    location ~ ^/mf/ {
+        rewrite ^/mf/(.*) /$1;
+    }
+
+    location ~ ^/wp-content/themes/tcs-responsive/ {
+        add_header 'X-nginx-debug' 'wp-content';
+        rewrite ^/wp-content/themes/tcs-responsive(.*) $1 last;
+    }
+
+    location /challenges/feed {
+        proxy_pass https://rss;
+        proxy_set_header Host tc1-rss-service.herokuapp.com;
+        proxy_set_header X-Real-IP       $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    ##location / {
+    ##    proxy_pass https://www;
+    ##    proxy_set_header Host www.topcoder.com;
+    ##    proxy_set_header X-Real-IP       $remote_addr;
+    ##    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    ##}
+}
